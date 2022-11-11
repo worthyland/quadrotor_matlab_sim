@@ -1,33 +1,13 @@
-%使用电机模型
+%使用刚体力矩模型
 %参考坐标系：世界坐标系NED
 %返回状态量：位置和姿态相对于参考坐标系；速度和角速度相对机体ned坐标系（可以在此代码中修改）
 %初始化参数在 mdl_quad.m 脚本文件中
 function [sys,x0,str,ts] = quadrotor_dynamics(t,x,u,flag, quad, x0, n0, groundflag)
-    % Flyer2dynamics lovingly coded by Paul Pounds, first coded 12/4/04
-    % A simulation of idealised X-4 Flyer II flight dynamics.
-    % version 2.0 2005 modified to be compatible with latest version of Matlab
-    % version 3.0 2006 fixed rotation matrix problem
-    % version 4.0 4/2/10, fixed rotor flapping rotation matrix bug, mirroring
-    % version 5.0 8/8/11, simplified and restructured
-   % version 6.0 25/10/13, fixed rotation matrix/inverse wronskian definitions, flapping cross-product bug
 
     warning off MATLAB:divideByZero
     
     global groundFlag;
         
-    % New in version 2:
-    %   - Generalised rotor thrust model
-    %   - Rotor flapping model
-    %   - Frame aerodynamic drag model
-    %   - Frame aerodynamic surfaces model
-    %   - Internal motor model
-    %   - Much coolage
-    
-    % Version 1.3
-    %   - Rigid body dynamic model
-    %   - Rotor gyroscopic model
-    %   - External motor model
-    
     %ARGUMENTS
     %   u       Reference inputs                1x4
     %   tele    Enable telemetry (1 or 0)       1x1
@@ -35,23 +15,21 @@ function [sys,x0,str,ts] = quadrotor_dynamics(t,x,u,flag, quad, x0, n0, groundfl
     %   init    Initial conditions              1x12
     
     %INPUTS
-    %   u = [N S E W]
-    %   NSEW motor commands                     1x4
+    %   u = [Tx Ty Tz T]
+    %   Triaxial moments and thrusts                     1x4
     
     %CONTINUOUS STATES
-    %   z      Position                         3x1   (x,y,z)
-    %   v      Velocity                         3x1   (xd,yd,zd)
-    %   n      Attitude                         3x1   (Y,P,R)
-    %   o      Angular velocity                 3x1   (wx,wy,wz)
-    %   w      Rotor angular velocity           4x1
+    %   z      Position                         3x1   (x,y,z) in {W_ned}
+    %   v      Velocity                         3x1   (xd,yd,zd) in {W_ned}
+    %   n      Attitude                         3x1   (Y,P,R) in {W_ned}
+    %   o      Angular velocity                 3x1   (wx,wy,wz)in {boby_ned}
     %
     % Notes: z-axis downward so altitude is -z(3)
     
     %CONTINUOUS STATE MATRIX MAPPING
-    %   x = [z1 z2 z3 n1 n2 n3 z1 z2 z3 o1 o2 o3 w1 w2 w3 w4]
+    %   x = [z1 z2 z3 n1 n2 n3 z1 z2 z3 o1 o2 o3]
     
     %INITIAL CONDITIONS
-    %n0 = [0 0 0];               %   n0      Ang. position initial conditions    1x3
     v0 = [0 0 0];               %   v0      Velocity Initial conditions         1x3
     o0 = [0 0 0];               %   o0      Ang. velocity initial conditions    1x3
     init = [x0 n0 v0 o0];       % x0 is the passed initial position 1x3
@@ -122,33 +100,15 @@ end % End of mdlInitializeSizes.
 %
 function sys = mdlDerivatives(t,x,u, quad)
     global a1s b1s groundFlag
-    
-    %CONSTANTS
-    %Cardinal Direction Indicies
-    N = 1;                      %   N       'North'                             1x1
-    E = 2;                      %   S       'South'                             1x1
-    S = 3;                      %   E       'East'                              1x1
-    W = 4;                      %   W       'West'                              1x1
-    
-    
-    D(:,1) = [quad.d;0;quad.h];          %   Di      Rotor hub displacements             1x3
-    D(:,2) = [0;quad.d;quad.h];
-    D(:,3) = [-quad.d;0;quad.h];
-    D(:,4) = [0;-quad.d;quad.h];
-    
-    %Body-fixed frame references
-    e1 = [1;0;0];               %   ei      Body fixed frame references         3x1
-    e2 = [0;1;0];
-    e3 = [0;0;1];
-    
-    %EXTRACT ROTOR SPEEDS FROM U
-    w = u(1:4);
+
+    tau = u(1:3);
+    T = u(4);
     
     %EXTRACT STATES FROM X
-    z = x(1:3);   % position in {W}
-    n = x(4:6);   % RPY angles {W}
-    v = x(7:9);   % velocity in {W}
-    o = x(10:12); % angular velocity in {W}
+    z = x(1:3);   % position in {W_ned}
+    n = x(4:6);   % RPY angles {W_ned}
+    v = x(7:9);   % velocity in {W_ned}
+    o = x(10:12); % angular velocity in {B_ned}
     
     %PREPROCESS ROTATION AND WRONSKIAN MATRICIES
     phi = n(1);    % yaw
@@ -156,65 +116,39 @@ function sys = mdlDerivatives(t,x,u, quad)
     psi = n(3);    % roll
     
     % rotz(phi)*roty(the)*rotx(psi)
-    R = [cos(the)*cos(phi) sin(psi)*sin(the)*cos(phi)-cos(psi)*sin(phi) cos(psi)*sin(the)*cos(phi)+sin(psi)*sin(phi);   %BBF > Inertial rotation matrix
-         cos(the)*sin(phi) sin(psi)*sin(the)*sin(phi)+cos(psi)*cos(phi) cos(psi)*sin(the)*sin(phi)-sin(psi)*cos(phi);
-         -sin(the)         sin(psi)*cos(the)                            cos(psi)*cos(the)];
+    %R = [cos(the)*cos(phi) sin(psi)*sin(the)*cos(phi)-cos(psi)*sin(phi) cos(psi)*sin(the)*cos(phi)+sin(psi)*sin(phi);   %BBF > Inertial rotation matrix
+    %     cos(the)*sin(phi) sin(psi)*sin(the)*sin(phi)+cos(psi)*cos(phi) cos(psi)*sin(the)*sin(phi)-sin(psi)*cos(phi);
+    %     -sin(the)         sin(psi)*cos(the)                            cos(psi)*cos(the)];
     
     
     %Manual Construction
-    %     Q3 = [cos(phi) -sin(phi) 0;sin(phi) cos(phi) 0;0 0 1];   % RZ %Rotation mappings
-    %     Q2 = [cos(the) 0 sin(the);0 1 0;-sin(the) 0 cos(the)];   % RY
-    %     Q1 = [1 0 0;0 cos(psi) -sin(psi);0 sin(psi) cos(psi)];   % RX
-    %     R = Q3*Q2*Q1    %Rotation matrix
+         Q3 = [cos(phi) -sin(phi) 0;sin(phi) cos(phi) 0;0 0 1];   % RZ %Rotation mappings
+         Q2 = [cos(the) 0 sin(the);0 1 0;-sin(the) 0 cos(the)];   % RY
+         Q1 = [1 0 0;0 cos(psi) -sin(psi);0 sin(psi) cos(psi)];   % RX
+         R = Q3*Q2*Q1    %Rotation matrix
     %
     %    RZ * RY * RX
     iW = [0        sin(psi)          cos(psi);             %inverted Wronskian
           0        cos(psi)*cos(the) -sin(psi)*cos(the);
           cos(the) sin(psi)*sin(the) cos(psi)*sin(the)] / cos(the);
-    if any(w == 0)
-        % might need to fix this, preculudes aerobatics :(
-        % mu becomes NaN due to 0/0
-        error('quadrotor_dynamics: not defined for zero rotor speed');
-    end
-    
-    %ROTOR MODEL
-    for i=[N E S W] %for each rotor
-        %Relative motion
-        
-        Vr = cross(o,D(:,i)) + v;
-        mu = sqrt(sum(Vr(1:2).^2)) / (abs(w(i))*quad.r);  %Magnitude of mu, planar components
-        lc = Vr(3) / (abs(w(i))*quad.r);   %Non-dimensionalised normal inflow
-        li = mu; %Non-dimensionalised induced velocity approximation
-        alphas = atan2(lc,mu);
-        j = atan2(Vr(2),Vr(1));  %Sideslip azimuth relative to e1 (zero over nose)
-        J = [cos(j) -sin(j);
-            sin(j) cos(j)];  %BBF > mu sideslip rotation matrix
-        
-        %Flapping
-        beta = [((8/3*quad.theta0 + 2*quad.theta1)*mu - 2*(lc)*mu)/(1-mu^2/2); %Longitudinal flapping
-            0;];%sign(w) * (4/3)*((Ct/sigma)*(2*mu*gamma/3/a)/(1+3*e/2/r) + li)/(1+mu^2/2)]; %Lattitudinal flapping (note sign)
-        beta = J'*beta;  %Rotate the beta flapping angles to longitudinal and lateral coordinates.
-        a1s(i) = beta(1) - 16/quad.gamma/abs(w(i)) * o(2);
-        b1s(i) = beta(2) - 16/quad.gamma/abs(w(i)) * o(1);
-        
-        %Forces and torques
-        T(:,i) = quad.Ct*quad.rho*quad.A*quad.r^2*w(i)^2 * [-cos(b1s(i))*sin(a1s(i)); sin(b1s(i));-cos(a1s(i))*cos(b1s(i))];   %Rotor thrust, linearised angle approximations
-        Q(:,i) = -quad.Cq*quad.rho*quad.A*quad.r^3*w(i)*abs(w(i)) * e3;     %Rotor drag torque - note that this preserves w(i) direction sign
-        tau(:,i) = cross(T(:,i),D(:,i));    %Torque due to rotor thrust
-    end
-    
+   
+    %Body-fixed frame references
+    e1 = [1;0;0];               %   ei      Body fixed frame references         3x1
+    e2 = [0;1;0];
+    e3 = [0;0;1];
+   
     %RIGID BODY DYNAMIC MODEL
     dz = v;
     dn = iW*o;
     
-    dv = quad.g*e3 + R*(1/quad.M)*sum(T,2);
+    dv = quad.g*e3 - R*(1/quad.M)*T*e3;
     
     % vehicle can't fall below ground
     if groundFlag && (z(3) > 0)
         z(3) = 0;
         dz(3) = 0;
     end
-    do = inv(quad.J)*(cross(-o,quad.J*o) + sum(tau,2) + sum(Q,2)); %row sum of torques
+    do = inv(quad.J)*(cross(-o,quad.J*o) + tau); %row sum of torques
     sys = [dz;dn;dv;do];   %This is the state derivative vector
 end % End of mdlDerivatives.
 
@@ -232,7 +166,7 @@ function sys = mdlOutputs(t,x, quad)
     end
     
     % compute output vector as a function of state vector
-    %   z      Position                         3x1   (x,y,z)
+    %   z      Position                         3x1   (x,y,z) 
     %   v      Velocity                         3x1   (xd,yd,zd)
     %   n      Attitude                         3x1   (Y,P,R)
     %   o      Angular velocity                 3x1   (Yd,Pd,Rd)
@@ -248,15 +182,11 @@ function sys = mdlOutputs(t,x, quad)
          cos(the)*sin(phi) sin(psi)*sin(the)*sin(phi)+cos(psi)*cos(phi) cos(psi)*sin(the)*sin(phi)-sin(psi)*cos(phi);
          -sin(the)         sin(psi)*cos(the)                            cos(psi)*cos(the)];
     
-    iW = [0        sin(psi)          cos(psi);             %inverted Wronskian
-          0        cos(psi)*cos(the) -sin(psi)*cos(the);
-          cos(the) sin(psi)*sin(the) cos(psi)*sin(the)] / cos(the);
     
     % return velocity in the body frame
     sys = [ x(1:6);
-            inv(R)*x(7:9);   % translational velocity mapped to body frame
-            inv(R)*x(10:12)];    % Angular velocity  mapped to body frame
-    %sys = [x(1:6); iW*x(7:9);  iW*x(10:12)];
+           inv(R)*x(7:9);   % translational velocity mapped to body frame
+           x(10:12)];    
     %sys = x;
 end
 % End of mdlOutputs.

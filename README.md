@@ -1,6 +1,8 @@
 # quadrotor_matlab_sim
 quadrotor matlab Simulation templates
 
+Rigid model
+
 the reference frame is the world ned frame
 
 the boby frame also is the ned frame
