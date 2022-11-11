@@ -2,7 +2,7 @@
 %参考坐标系：世界坐标系NED
 %返回状态量：位置和姿态相对于参考坐标系；速度和角速度相对机体ned坐标系（可以在此代码中修改）
 %初始化参数在 mdl_quad.m 脚本文件中
-function [sys,x0,str,ts] = quadrotor_dynamics(t,x,u,flag, quad, x0, n0, groundflag)
+function [sys,x0,str,ts] = quadrotor_dynamics(t,x,u,flag, quad, x0,n0 groundflag)
     % Flyer2dynamics lovingly coded by Paul Pounds, first coded 12/4/04
     % A simulation of idealised X-4 Flyer II flight dynamics.
     % version 2.0 2005 modified to be compatible with latest version of Matlab
@@ -51,7 +51,7 @@ function [sys,x0,str,ts] = quadrotor_dynamics(t,x,u,flag, quad, x0, n0, groundfl
     %   x = [z1 z2 z3 n1 n2 n3 z1 z2 z3 o1 o2 o3 w1 w2 w3 w4]
     
     %INITIAL CONDITIONS
-    %n0 = [0 0 0];               %   n0      Ang. position initial conditions    1x3
+    n0 = [0 0 0];               %   n0      Ang. position initial conditions    1x3
     v0 = [0 0 0];               %   v0      Velocity Initial conditions         1x3
     o0 = [0 0 0];               %   o0      Ang. velocity initial conditions    1x3
     init = [x0 n0 v0 o0];       % x0 is the passed initial position 1x3
@@ -255,7 +255,7 @@ function sys = mdlOutputs(t,x, quad)
     % return velocity in the body frame
     sys = [ x(1:6);
             inv(R)*x(7:9);   % translational velocity mapped to body frame
-            inv(R)*x(10:12)];    % Angular velocity mapped to body frame
+            iW*x(10:12)];    % RPY rates mapped to body frame
     %sys = [x(1:6); iW*x(7:9);  iW*x(10:12)];
     %sys = x;
 end
