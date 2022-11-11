@@ -86,10 +86,6 @@ function [sys,x0,str,ts] = mdlInitializeSizes(init, quad)
     %
     % Generic timesample
     ts = [0 0];
-    
-    if quad.verbose
-        disp(sprintf('t\t\tz1\t\tz2\t\tz3\t\tn1\t\tn2\t\tn3\t\tv1\t\tv2\t\tv3\t\to1\t\to2\t\to3\t\tw1\t\tw2\t\tw3\t\tw4\t\tu1\t\tu2\t\tu3\t\tu4'))
-    end
 end % End of mdlInitializeSizes.
 
 
