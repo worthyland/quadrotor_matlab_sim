@@ -5,7 +5,7 @@ the reference frame is the world ned frame
 
 the boby frame also is the ned frame
 
-input value:Torque and thrust
+input value:Torque and thrust （Torque in the boby_ned frame ,thrust > 0）
 
 output state: position;Ang;velocity;Angular velocity.
 

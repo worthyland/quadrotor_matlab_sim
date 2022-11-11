@@ -255,7 +255,7 @@ function sys = mdlOutputs(t,x, quad)
     % return velocity in the body frame
     sys = [ x(1:6);
             inv(R)*x(7:9);   % translational velocity mapped to body frame
-            inv(R)*x(10:12)];    % Angular velocity mapped to body frame
+            inv(R)*x(10:12)];    % Angular velocity  mapped to body frame
     %sys = [x(1:6); iW*x(7:9);  iW*x(10:12)];
     %sys = x;
 end
