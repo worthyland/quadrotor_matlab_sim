@@ -17,7 +17,7 @@ Angular velocity mapped to body frame.
 simulink model
 ![](fig/sys.jpg)
 
-#quadtor
+# quadtor
 quadrotor model is in model/quadrotor_dynamics.m
 
 ![](fig/quadrotor.jpg)
@@ -28,7 +28,7 @@ Initial position,Initial Ang.(Y,P,R) rad is be set up.
 quadrotor parameter is be set in model/mdl_quad.m.
 
 
-#figure
+# figure
  model/quadrotor_plot.m is used  to  show state.
 
 ![](fig/show_state.jpg)
