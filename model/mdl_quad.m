@@ -22,6 +22,3 @@ quadrotor.Ixx = 0.064;
 quadrotor.Iyy = 0.064;
 quadrotor.Izz = 0.112;
 quadrotor.J = diag([quadrotor.Ixx quadrotor.Iyy quadrotor.Izz]);    %   I       Flyer rotational inertia matrix     3x3
-
-
-

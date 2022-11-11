@@ -20,8 +20,8 @@ function [sys,x0,str,ts] = quadrotor_dynamics(t,x,u,flag, quad, x0, n0, groundfl
     
     %CONTINUOUS STATES
     %   z      Position                         3x1   (x,y,z) in {W_ned}
-    %   v      Velocity                         3x1   (xd,yd,zd) in {W_ned}
     %   n      Attitude                         3x1   (Y,P,R) in {W_ned}
+    %   v      Velocity                         3x1   (xd,yd,zd) in {W_ned}
     %   o      Angular velocity                 3x1   (wx,wy,wz)in {boby_ned}
     %
     % Notes: z-axis downward so altitude is -z(3)
