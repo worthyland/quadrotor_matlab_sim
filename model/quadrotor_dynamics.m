@@ -157,9 +157,9 @@ end % End of mdlDerivatives.
 function sys = mdlOutputs(t,x, quad)
     
     %TELEMETRY
-    if quad.verbose
-        disp(sprintf('%0.3f\t',t,x))
-    end
+    %if quad.verbose
+        %disp(sprintf('%0.3f\t',t,x))
+    %end
     
     % compute output vector as a function of state vector
     %   z      Position                         3x1   (x,y,z) 
